@@ -68,3 +68,12 @@ jobs:
         with:
           name: ${{ github.event.inputs.package_name }}-xbps
           path: hostdir/binpkgs/**/*.xbps
+          
+- name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-${{ github.event.inputs.package_name }}
+          name: "${{ github.event.inputs.package_name }} - Latest Build"
+          files: hostdir/binpkgs/**/*.xbps
+          generate_release_notes: true
+          make_latest: true
