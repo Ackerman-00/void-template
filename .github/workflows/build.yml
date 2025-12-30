@@ -1,0 +1,43 @@
+name: Build Custom XBPS
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: 'Which package to build?'
+        required: true
+        default: 'niri'
+        type: choice
+        options:
+          - niri
+          - vesktop
+          - zen-browser
+          - gpu-screen-recorder
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout your template
+        uses: actions/checkout@v4
+        with:
+          path: custom-repo
+
+      - name: Build in Void Container
+        run: |
+          # Ensure the current directory is writable by the container user
+          chmod 777 .
+          docker run --rm -v ${PWD}:/home/work voidlinux/voidlinux /bin/sh -c "
+            xbps-install -Sy git base-devel xtools &&
+            git clone --depth=1 https://github.com/void-linux/void-packages.git /tmp/void-packages &&
+            cp -r /home/work/custom-repo/${{ inputs.package_name }} /tmp/void-packages/srcpkgs/ &&
+            cd /tmp/void-packages &&
+            ./xbps-src binary-bootstrap &&
+            ./xbps-src pkg ${{ inputs.package_name }} &&
+            cp hostdir/binpkgs/*.xbps /home/work/ || cp hostdir/binpkgs/*/*.xbps /home/work/
+          "
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.package_name }}-binary
+          path: "**/*.xbps"
