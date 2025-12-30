@@ -17,7 +17,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      # Official Void image used for CI
       image: ghcr.io/void-linux/void-glibc-full:20250616R1
       options: --privileged
       volumes:
@@ -26,14 +25,9 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          # 1. Setup official CI mirrors
           mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
           sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
-          
-          # 2. Update and install basic tools
           xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git
-          
-          # 3. Create the official 'builder' user
           useradd -G xbuilder -M builder
 
       - name: Checkout your template
@@ -46,8 +40,7 @@ jobs:
           git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
           cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
           
-          # --- THE MAGIC FIX ---
-          # Force ethereal mode to prevent the uid_map error
+          # Fix for uid_map error
           echo 'XBPS_CHROOT_CMD=ethereal' >> void-packages/etc/conf
           echo 'XBPS_ALLOW_CHROOT_BREAKOUT=yes' >> void-packages/etc/conf
           
@@ -56,13 +49,12 @@ jobs:
       - name: Build package
         run: |
           cd void-packages
-          # binary-bootstrap creates the base environment
           sudo -Eu builder ./xbps-src binary-bootstrap
-          # pkg builds your specific package
           sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
-        uses: actions/artifact@v4
+        # Fixed the typo here: from 'actions/artifact' to 'actions/upload-artifact'
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.package_name }}-binary
           path: "void-packages/hostdir/binpkgs/**/*.xbps"
