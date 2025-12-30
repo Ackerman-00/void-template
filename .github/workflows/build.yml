@@ -7,6 +7,10 @@ on:
         description: 'Package to build (e.g., niri)'
         required: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build packages
@@ -26,9 +30,11 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          xbps-install -Syu xbps || xbps-install -Syu xbps
-          xbps-install -yu
-          xbps-install -y sudo bash curl git grep
+          # Use Fastly
+          REPO="https://repo-fastly.voidlinux.org/current"
+          xbps-install -S -R "$REPO" -yu xbps || xbps-install -S -R "$REPO" -yu xbps
+          xbps-install -S -R "$REPO" -yu
+          xbps-install -S -R "$REPO" -y sudo bash curl git grep
           useradd -G xbuilder -M builder
 
       - name: Clone Official Void-Packages
@@ -36,12 +42,12 @@ jobs:
           git clone --depth=1 https://github.com/void-linux/void-packages.git .
           chown -R builder:builder .
 
-      - name: Checkout Custom Templates
+      - name: Checkout Your Custom Templates
         uses: actions/checkout@v4
         with:
           path: custom-templates-temp
 
-      - name: Inject Custom Template
+      - name: Inject Template
         run: |
           cp -r custom-templates-temp/${{ github.event.inputs.package_name }} srcpkgs/
           mkdir -p etc
@@ -49,23 +55,19 @@ jobs:
           echo "XBPS_ALLOW_CHROOT_BREAKOUT=yes" >> etc/conf
           chown -R builder:builder .
 
-      - name: Prepare masterdir (Official)
+      - name: Prepare Masterdir (Void Style)
         run: |
           sudo -Eu builder common/travis/set_mirror.sh
+          # This prepare script is what they use to set up the build environment
           sudo -Eu builder common/travis/prepare.sh
           common/travis/fetch-xtools.sh
 
-      - name: Build package (Official)
+      - name: Build
         run: |
+          # We tell the build script exactly what to build manually
           echo "${{ github.event.inputs.package_name }}" > /tmp/templates
           sudo -Eu builder common/travis/build.sh "$BOOTSTRAP" "$ARCH" "$TEST"
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.event.inputs.package_name }}-xbps
-          path: hostdir/binpkgs/**/*.xbps
-          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -73,4 +75,3 @@ jobs:
           name: "${{ github.event.inputs.package_name }} - Latest Build"
           files: hostdir/binpkgs/**/*.xbps
           generate_release_notes: true
-          make_latest: true
