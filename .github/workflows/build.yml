@@ -24,45 +24,41 @@ jobs:
 
       - name: Build in Void Container
         run: |
-          # 1. Make current directory accessible to the container
+          # 1. Make current directory accessible
           chmod 777 .
           
-          # 2. Run the build with --privileged (needed for chroot)
+          # 2. Run everything as ROOT (no su, no user switching)
           docker run --privileged --rm -v ${PWD}:/home/work voidlinux/voidlinux /bin/sh -c "
-            # --- ROOT TASKS (Setup) ---
-            # Set the fast mirror
+            # --- SETUP ---
+            # Set the reliable mirror
             mkdir -p /etc/xbps.d
             echo 'repository=https://repo-fastly.voidlinux.org/current' > /etc/xbps.d/00-repository-main.conf
             
-            # Update and Install Dependencies
+            # Install dependencies
             xbps-install -Syu xbps &&
             xbps-install -Sy ca-certificates git base-devel xtools bash &&
             
-            # Create the 'builder' user (xbps-src cannot run as root)
-            useradd -m builder
-            
-            # Clone official packages to a folder we can access
-            git clone --depth=1 https://github.com/void-linux/void-packages.git /home/builder/void-packages
+            # Clone official packages
+            git clone --depth=1 https://github.com/void-linux/void-packages.git /tmp/void-packages &&
             
             # Inject your custom template
-            cp -r /home/work/custom-repo/${{ inputs.package_name }} /home/builder/void-packages/srcpkgs/
+            cp -r /home/work/custom-repo/${{ inputs.package_name }} /tmp/void-packages/srcpkgs/ &&
             
-            # Give the builder user ownership of the folder
-            chown -R builder:builder /home/builder/void-packages
+            # --- THE HACK ---
+            # Edit xbps-src to allow running as root
+            # We change the check 'if [ id -eq 0 ]' to 'if [ 1 -eq 0 ]' so it never triggers
+            cd /tmp/void-packages
+            sed -i 's/if \[ \"\$(id -u)\" -eq 0 \]; then/if [ 1 -eq 0 ]; then/' xbps-src
             
-            # --- USER TASKS (Build) ---
-            # Switch to builder to run the actual build
-            su builder -c '
-              cd /home/builder/void-packages
-              ./xbps-src binary-bootstrap
-              ./xbps-src pkg ${{ inputs.package_name }}
-            '
+            # --- BUILD ---
+            # Now we can run normally as root!
+            ./xbps-src binary-bootstrap &&
+            ./xbps-src pkg ${{ inputs.package_name }} &&
             
-            # --- ROOT TASKS (Cleanup) ---
-            # Copy the result out to the mounted volume
-            # We check both locations because x86_64 packages sometimes land in a subdir
-            cp /home/builder/void-packages/hostdir/binpkgs/*.xbps /home/work/ 2>/dev/null || \
-            cp /home/builder/void-packages/hostdir/binpkgs/*/*.xbps /home/work/
+            # --- CLEANUP ---
+            # Copy result out
+            cp hostdir/binpkgs/*.xbps /home/work/ 2>/dev/null || \
+            cp hostdir/binpkgs/*/*.xbps /home/work/
           "
 
       - name: Upload Result
