@@ -1,0 +1,60 @@
+# Template for ProtonPlus
+
+pkgname=protonplus
+version=0.5.14
+revision=1
+archs="x86_64"
+
+short_desc="A simple Wine and Proton-based compatibility tools manager for GNOME"
+maintainer="Quietcraft<ackerman@gmail.com>"
+homepage="https://github.com/Vysp3r/ProtonPlus"
+license="GPL-3.0-or-later"
+
+depends="gtk4 json-glib libadwaita libarchive libgee libsoup3"
+hostmakedepends="meson vala pkg-config glib-devel gettext gtk4-devel json-glib-devel libadwaita-devel libarchive-devel libgee-devel libsoup3-devel desktop-file-utils appstream-glib"
+
+distfiles="https://github.com/Vysp3r/ProtonPlus/archive/refs/tags/v${version}.tar.gz"
+checksum=b2fa7a6a7decf202b3137bf39ae90e5966780b3043b88fc0969b6094e5e390ce
+
+do_build() {
+    cd "${wrksrc}"
+    meson setup build \
+        --prefix=/usr \
+        --libdir=/usr/lib \
+        --buildtype=release
+    meson compile -C build
+}
+
+do_check() {
+    cd "${wrksrc}"
+    meson test -C build --no-rebuild --print-errorlogs
+}
+
+do_install() {
+    cd "${wrksrc}"
+    DESTDIR="${DESTDIR}" meson install -C build --no-rebuild
+
+    # Ensure no /usr/local artifacts
+    rm -rf "${DESTDIR}/usr/local"
+
+    # --- Desktop Integration (auto-detect) ---
+    # Find and install desktop file if meson didn't already do it
+    desktop_file=$(find . -type f -name "*.desktop" | head -n 1)
+    if [ -n "$desktop_file" ]; then
+        install -Dm644 "$desktop_file" \
+            "${DESTDIR}/usr/share/applications/$(basename "$desktop_file")"
+    fi
+
+    # Find and install AppStream file if present
+    appdata_file=$(find . -type f -name "*.metainfo.xml" -o -name "*.appdata.xml" | head -n 1)
+    if [ -n "$appdata_file" ]; then
+        install -Dm644 "$appdata_file" \
+            "${DESTDIR}/usr/share/metainfo/$(basename "$appdata_file")"
+    fi
+
+    # Find and install icons (hicolor theme)
+    find . -type f -path "*/icons/hicolor/*/apps/*.png" | while read -r icon; do
+        relpath="${icon#*icons/hicolor/}"
+        install -Dm644 "$icon" "${DESTDIR}/usr/share/icons/hicolor/${relpath}"
+    done
+}
