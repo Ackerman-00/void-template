@@ -25,14 +25,14 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          # Setup repositories
+          # 1. Setup mirrors
           mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
           sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
           
-          # Install basic build tools
+          # 2. Install requirements
           xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git
           
-          # Create builder user
+          # 3. Create build user
           useradd -G xbuilder -M builder
 
       - name: Checkout your template
@@ -45,26 +45,25 @@ jobs:
           git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
           cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
           
-          # Configure etc/conf correctly
-          # We use 'ethereal' to avoid the namespace/uid_map issues in GitHub Actions
-          echo 'XBPS_CHROOT_CMD=ethereal' >> void-packages/etc/conf
-          echo 'XBPS_ALLOW_CHROOT_BREAKOUT=yes' >> void-packages/etc/conf
+          # Use etc/conf to override defaults.conf safely
+          # This prevents the uid_map error by using the container's own environment
+          cat <<EOF > void-packages/etc/conf
+          XBPS_CHROOT_CMD=ethereal
+          XBPS_ALLOW_CHROOT_BREAKOUT=yes
+          EOF
           
-          # Crucial: xbps-src needs a masterdir to exist even in ethereal mode
+          # Ensure masterdir exists so bootstrap doesn't trip
           mkdir -p void-packages/masterdir
           
-          # Fix permissions for the builder user
           chown -R builder:builder .
 
-      - name: Build package
+      - name: Bootstrap and Build
         run: |
           cd void-packages
-          
-          # Instead of bootstrap-ethereal, we use binary-bootstrap
-          # This sets up the environment inside the container
+          # Standard bootstrap to initialize the masterdir
           sudo -Eu builder ./xbps-src binary-bootstrap
           
-          # Build your package
+          # Build the package
           sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
