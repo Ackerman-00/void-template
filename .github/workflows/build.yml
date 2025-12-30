@@ -23,15 +23,12 @@ jobs:
         BOOTSTRAP: 'x86_64'
         TEST: '1'
 
-        steps:
+      steps:
       - name: Prepare container
         run: |
-          # 1. Switch to a stable mirror (Fastly) to fix the 404 error
           mkdir -p /etc/xbps.d
           cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
           sed -i 's|https://repo-default.voidlinux.org|https://repo-fastly.voidlinux.org|g' /etc/xbps.d/*-repository-*.conf
-          
-          # 2. Update and install tools
           xbps-install -Syu xbps || xbps-install -Syu xbps
           xbps-install -yu
           xbps-install -y sudo bash curl git grep
