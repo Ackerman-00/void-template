@@ -40,20 +40,27 @@ jobs:
           git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
           cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
           
-          # Fix for uid_map error
+          # Configure for Ethereal mode (to avoid uid_map errors)
           echo 'XBPS_CHROOT_CMD=ethereal' >> void-packages/etc/conf
           echo 'XBPS_ALLOW_CHROOT_BREAKOUT=yes' >> void-packages/etc/conf
           
+          # Initialize the masterdir for ethereal mode
+          cd void-packages
+          mkdir -p masterdir
+          
+          # Give builder ownership of everything
+          cd ..
           chown -R builder:builder .
 
       - name: Build package
         run: |
           cd void-packages
-          sudo -Eu builder ./xbps-src binary-bootstrap
+          # The key fix: bootstrap-ethereal prepares the masterdir without a full install
+          sudo -Eu builder ./xbps-src bootstrap-ethereal
+          # Now it will find the 'bootstrap' and proceed to build
           sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
-        # Fixed the typo here: from 'actions/artifact' to 'actions/upload-artifact'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.package_name }}-binary
