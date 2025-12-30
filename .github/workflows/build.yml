@@ -16,48 +16,51 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # This tells GitHub to run the whole job INSIDE the Void container
+    container:
+      image: ghcr.io/void-linux/void-glibc-full:20250616R1
+      options: --privileged
+      volumes:
+        - /dev:/dev
+
     steps:
+      - name: Prepare container
+        run: |
+          # 1. Setup official CI mirrors
+          mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
+          sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
+          
+          # 2. Update and install basic tools
+          xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git
+          
+          # 3. Create the official 'builder' user with the 'xbuilder' group
+          useradd -G xbuilder -M builder
+
       - name: Checkout your template
         uses: actions/checkout@v4
         with:
           path: custom-repo
 
-      - name: Build in Void Container
+      - name: Setup void-packages
         run: |
-          chmod 777 .
-          # We use --privileged to allow the builder user to mount the masterdir
-          docker run --privileged --rm -v ${PWD}:/home/work voidlinux/voidlinux /bin/sh -c "
-            # 1. ROOT PHASE: System Setup
-            mkdir -p /etc/xbps.d
-            echo 'repository=https://repo-fastly.voidlinux.org/current' > /etc/xbps.d/00-repository-main.conf
-            xbps-install -Syu xbps &&
-            xbps-install -Sy ca-certificates git base-devel xtools sudo bash &&
+          # Clone official repo
+          git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
+          
+          # Inject your custom package
+          cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
+          
+          # Set ownership so the builder user can work
+          chown -R builder:builder .
 
-            # 2. ROOT PHASE: Create User & Permissions
-            useradd -m builder
-            echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-            
-            # 3. ROOT PHASE: Prepare Workspace
-            git clone --depth=1 https://github.com/void-linux/void-packages.git /home/builder/void-packages
-            cp -r /home/work/custom-repo/${{ inputs.package_name }} /home/builder/void-packages/srcpkgs/
-            chown -R builder:builder /home/builder/void-packages
-
-            # 4. USER PHASE: Run as 'builder'
-            su - builder -c '
-              cd void-packages
-              # We use sudo for the bootstrap because it needs to mount things
-              ./xbps-src binary-bootstrap
-              # Run the package build as the user
-              ./xbps-src pkg ${{ inputs.package_name }}
-            '
-
-            # 5. ROOT PHASE: Export the file
-            cp /home/builder/void-packages/hostdir/binpkgs/*.xbps /home/work/ 2>/dev/null || \
-            cp /home/builder/void-packages/hostdir/binpkgs/*/*.xbps /home/work/
-          "
+      - name: Build package
+        run: |
+          # Use the official way: sudo -Eu (Preserve Environment)
+          cd void-packages
+          sudo -Eu builder ./xbps-src binary-bootstrap
+          sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.package_name }}-binary
-          path: "**/*.xbps"
+          path: "void-packages/hostdir/binpkgs/**/*.xbps"
