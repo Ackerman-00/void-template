@@ -17,6 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
+      # Using the same image as the official Void CI you shared
       image: ghcr.io/void-linux/void-glibc-full:20250616R1
       options: --privileged
       volumes:
@@ -25,14 +26,10 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          # 1. Setup mirrors
+          # Official Void CI setup logic
           mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
           sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
-          
-          # 2. Install requirements
-          xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git
-          
-          # 3. Create build user
+          xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git curl
           useradd -G xbuilder -M builder
 
       - name: Checkout your template
@@ -42,28 +39,31 @@ jobs:
 
       - name: Setup void-packages
         run: |
+          # 1. Clone the official toolset
           git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
+          
+          # 2. Inject your custom template
           cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
           
-          # Use etc/conf to override defaults.conf safely
-          # This prevents the uid_map error by using the container's own environment
-          cat <<EOF > void-packages/etc/conf
-          XBPS_CHROOT_CMD=ethereal
-          XBPS_ALLOW_CHROOT_BREAKOUT=yes
-          EOF
+          # 3. Configure for Container (Ethereal mode)
+          # This is the secret sauce for GitHub Actions
+          echo "XBPS_CHROOT_CMD=ethereal" >> void-packages/etc/conf
+          echo "XBPS_ALLOW_CHROOT_BREAKOUT=yes" >> void-packages/etc/conf
           
-          # Ensure masterdir exists so bootstrap doesn't trip
-          mkdir -p void-packages/masterdir
-          
+          # 4. Fix Ownership (Official CI Step)
           chown -R builder:builder .
 
-      - name: Bootstrap and Build
+      - name: Bootstrap Masterdir
         run: |
           cd void-packages
-          # Standard bootstrap to initialize the masterdir
+          # This command installs the base system into 'masterdir'
+          # Without this, you get the "Bootstrap not installed" error
           sudo -Eu builder ./xbps-src binary-bootstrap
-          
-          # Build the package
+
+      - name: Build Package
+        run: |
+          cd void-packages
+          # Now that masterdir is populated, we can build
           sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
