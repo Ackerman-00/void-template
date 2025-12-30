@@ -1,7 +1,7 @@
 pkgname=matugen-bin
 version=3.1.0
 revision=1
-maintainer="ackerman <your@email.com>"
+maintainer="ackerman <local>"
 short_desc="A material you color generation tool with templates (binary)"
 homepage="https://github.com/InioX/matugen"
 license="GPL-2.0-or-later"

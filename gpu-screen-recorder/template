@@ -4,7 +4,7 @@ revision=1
 archs="x86_64"
 
 short_desc="A shadowplay-like screen recorder for Linux. The fastest screen recorder for Linux"
-maintainer="Quietcraft <ackerman@gmail.com>"
+maintainer="ackerman <local>"
 homepage="https://git.dec05eba.com/gpu-screen-recorder"
 license="GPL-3.0-only"
 
