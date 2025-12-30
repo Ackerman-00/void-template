@@ -25,9 +25,14 @@ jobs:
     steps:
       - name: Prepare container
         run: |
+          # Setup repositories
           mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
           sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
+          
+          # Install basic build tools
           xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash git
+          
+          # Create builder user
           useradd -G xbuilder -M builder
 
       - name: Checkout your template
@@ -40,24 +45,26 @@ jobs:
           git clone --depth=1 https://github.com/void-linux/void-packages.git void-packages
           cp -r custom-repo/${{ inputs.package_name }} void-packages/srcpkgs/
           
-          # Configure for Ethereal mode (to avoid uid_map errors)
+          # Configure etc/conf correctly
+          # We use 'ethereal' to avoid the namespace/uid_map issues in GitHub Actions
           echo 'XBPS_CHROOT_CMD=ethereal' >> void-packages/etc/conf
           echo 'XBPS_ALLOW_CHROOT_BREAKOUT=yes' >> void-packages/etc/conf
           
-          # Initialize the masterdir for ethereal mode
-          cd void-packages
-          mkdir -p masterdir
+          # Crucial: xbps-src needs a masterdir to exist even in ethereal mode
+          mkdir -p void-packages/masterdir
           
-          # Give builder ownership of everything
-          cd ..
+          # Fix permissions for the builder user
           chown -R builder:builder .
 
       - name: Build package
         run: |
           cd void-packages
-          # The key fix: bootstrap-ethereal prepares the masterdir without a full install
-          sudo -Eu builder ./xbps-src bootstrap-ethereal
-          # Now it will find the 'bootstrap' and proceed to build
+          
+          # Instead of bootstrap-ethereal, we use binary-bootstrap
+          # This sets up the environment inside the container
+          sudo -Eu builder ./xbps-src binary-bootstrap
+          
+          # Build your package
           sudo -Eu builder ./xbps-src pkg ${{ inputs.package_name }}
 
       - name: Upload Result
