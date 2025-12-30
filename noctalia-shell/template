@@ -1,0 +1,21 @@
+pkgname=noctalia-shell
+version=3.7.5
+revision=1
+hostmakedepends=""
+maintainer="Ly-sec <itslysec@gmail.com>"
+depends="quickshell qt6-plugin-tls-openssl power-profiles-daemon font-inter brightnessctl ddcutil"
+short_desc="A sleek and minimal desktop shell thoughtfully crafted for Wayland, built with Quickshell."
+homepage="https://github.com/noctalia-dev/noctalia-shell"
+license="MIT"
+
+distfiles="https://github.com/noctalia-dev/noctalia-shell/archive/refs/tags/v${version}.tar.gz"
+checksum=0d6f156acacdbe36b875cf8b7f0f2cf7c4d4ebee1fe848e6367e343e3df0f899
+
+build() {
+    return 0
+}
+
+do_install() {
+    mkdir -p "${DESTDIR}/etc/xdg/quickshell/noctalia-shell"
+    cp -r "${wrksrc}/." "${DESTDIR}/etc/xdg/quickshell/noctalia-shell/"
+}
