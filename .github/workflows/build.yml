@@ -26,9 +26,6 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          mkdir -p /etc/xbps.d
-          cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
-          sed -i 's|https://repo-default.voidlinux.org|https://repo-fastly.voidlinux.org|g' /etc/xbps.d/*-repository-*.conf
           xbps-install -Syu xbps || xbps-install -Syu xbps
           xbps-install -yu
           xbps-install -y sudo bash curl git grep
