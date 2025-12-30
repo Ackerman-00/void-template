@@ -26,14 +26,13 @@ jobs:
     steps:
       - name: Prepare container
         run: |
-          mkdir -p /etc/xbps.d && cp /usr/share/xbps.d/*-repository-*.conf /etc/xbps.d/
-          sed -i 's|repo-default|repo-ci|g' /etc/xbps.d/*-repository-*.conf
+          # DO NOT force repo-ci here; it causes the 'Not Found' error.
+          # We use the default reliable mirrors to get the build tools.
           xbps-install -Syu xbps && xbps-install -yu && xbps-install -y sudo bash curl git grep
           useradd -G xbuilder -M builder
 
       - name: Clone Official Void-Packages
         run: |
-          # Clone into the current directory BEFORE we checkout your custom code
           git clone --depth=1 https://github.com/void-linux/void-packages.git .
           chown -R builder:builder .
 
@@ -44,24 +43,22 @@ jobs:
 
       - name: Inject Custom Template
         run: |
-          # Move your template from the temp folder into the official srcpkgs/
           cp -r custom-templates-temp/${{ github.event.inputs.package_name }} srcpkgs/
-          # Setup ethereal mode to allow building in the container
           mkdir -p etc
+          # Using ethereal is the official way to build inside containers
           echo "XBPS_CHROOT_CMD=ethereal" >> etc/conf
           echo "XBPS_ALLOW_CHROOT_BREAKOUT=yes" >> etc/conf
           chown -R builder:builder .
 
       - name: Prepare masterdir (Official)
         run: |
+          # THIS is where the official CI mirror logic is safely applied
           sudo -Eu builder common/travis/set_mirror.sh
           sudo -Eu builder common/travis/prepare.sh
-          # fetch-xtools doesn't need sudo as it's just a download
           common/travis/fetch-xtools.sh
 
       - name: Build package (Official)
         run: |
-          # Tell the official script which package to focus on
           echo "${{ github.event.inputs.package_name }}" > /tmp/templates
           sudo -Eu builder common/travis/build.sh "$BOOTSTRAP" "$ARCH" "$TEST"
 
