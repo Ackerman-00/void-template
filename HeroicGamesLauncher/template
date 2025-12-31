@@ -9,20 +9,29 @@ maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="GPL-3.0-or-later"
 homepage="https://heroicgameslauncher.com"
 depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
+
 nopie_files="/opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/gogdl
  /opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/legendary"
+
 nostrip_files="${nopie_files}"
 
 do_install() {
-    # 1. Create the system structure
+    # 1. Prepare system directories
     vmkdir opt/heroic
     vmkdir usr/bin
     vmkdir usr/share/applications
     vmkdir usr/share/icons/hicolor/512x512/apps
-
     vcopy "*" opt/heroic
     ln -sf /opt/heroic/heroic "${DESTDIR}/usr/bin/heroic"
+    if [ -f "${FILESDIR}/HeroicGamesLauncher.desktop" ]; then
+        vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
+    fi
 
-    vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
-    vcopy "resources/app/public/icon.png" "usr/share/icons/hicolor/512x512/apps/heroic.png"
+    if [ -f "${DESTDIR}/opt/heroic/resources/app.asar.unpacked/public/icon.png" ]; then
+        cp "${DESTDIR}/opt/heroic/resources/app.asar.unpacked/public/icon.png" "${DESTDIR}/usr/share/icons/hicolor/512x512/apps/heroic.png"
+    else
+        # Fallback for other potential locations in the tarball
+        vcopy "resources/app/public/icon.png" usr/share/icons/hicolor/512x512/apps/heroic.png || \
+        vcopy "icon.png" usr/share/icons/hicolor/512x512/apps/heroic.png
+    fi
 }
