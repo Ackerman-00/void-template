@@ -13,14 +13,13 @@ depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXran
 
 do_install() {
     vmkdir opt/heroic
-    # Copy everything from the extracted tarball to /opt/heroic
     vcopy "*" opt/heroic
     
-    # Create the symlink so 'heroic' works in terminal
     vmkdir usr/bin
     ln -sf /opt/heroic/heroic "${DESTDIR}/usr/bin/heroic"
 
-    # Install Desktop entry and Icon
     vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
-    vinstall resources/app/public/icon.png 644 usr/share/pixmaps/heroic.png
+    
+    vinstall opt/heroic/resources/app/public/icon.png 644 usr/share/pixmaps/heroic.png || \
+    vinstall icon.png 644 usr/share/pixmaps/heroic.png || true
 }
