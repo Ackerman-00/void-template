@@ -12,7 +12,7 @@ makedepends="cli11 qt6-base-private-devel qt6-declarative-private-devel
  pam-devel"
 depends="qt6-svg"
 short_desc="Flexible QtQuick-based desktop shell toolkit"
-maintainer="ackerman <local>"
+maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="LGPL-3.0-only"
 homepage="https://quickshell.org"
 changelog="https://quickshell.org/changelog/"

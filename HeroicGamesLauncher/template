@@ -9,7 +9,7 @@ maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="GPL-3.0-or-later"
 homepage="https://heroicgameslauncher.com"
 
-depends="libnss libatk libasound libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
+depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
 
 do_install() {
     vmkdir opt/heroic
