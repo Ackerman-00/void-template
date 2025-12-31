@@ -8,18 +8,21 @@ short_desc="Open source launcher for GOG, Epic, and Amazon Games"
 maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="GPL-3.0-or-later"
 homepage="https://heroicgameslauncher.com"
-
 depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
+nopie_files="/opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/gogdl
+ /opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/legendary"
+nostrip_files="${nopie_files}"
 
 do_install() {
+    # 1. Create the system structure
     vmkdir opt/heroic
-    vcopy "*" opt/heroic
-    
     vmkdir usr/bin
+    vmkdir usr/share/applications
+    vmkdir usr/share/icons/hicolor/512x512/apps
+
+    vcopy "*" opt/heroic
     ln -sf /opt/heroic/heroic "${DESTDIR}/usr/bin/heroic"
 
     vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
-    
-    vinstall opt/heroic/resources/app/public/icon.png 644 usr/share/pixmaps/heroic.png || \
-    vinstall icon.png 644 usr/share/pixmaps/heroic.png || true
+    vcopy "resources/app/public/icon.png" "usr/share/icons/hicolor/512x512/apps/heroic.png"
 }
