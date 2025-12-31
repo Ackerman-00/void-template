@@ -13,9 +13,17 @@ checksum=4f696b7593107a90ed3ff947a4b1e0dbf1734ba41cbcb8f366559fe963c43fad
 hostmakedepends="binutils tar xz"
 depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
 
-# Safety: Ignore PIE for bundled binaries inside the deb
-nopie_files="/opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux/gogdl
- /opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux/legendary"
+# WHITELIST: Tell Void to allow these pre-compiled non-PIE binaries
+_helper_path="opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux"
+nopie_files="
+ /opt/Heroic/heroic
+ /opt/Heroic/chrome-sandbox
+ /${_helper_path}/gogdl
+ /${_helper_path}/legendary
+ /${_helper_path}/nile
+ /${_helper_path}/comet
+ /${_helper_path}/vulkan-helper"
+
 nostrip_files="${nopie_files}"
 
 do_extract() {
@@ -27,20 +35,22 @@ do_extract() {
 }
 
 do_install() {
-    # Create the necessary system directories
     vmkdir usr/share/applications
     vmkdir usr/share/icons
     vmkdir opt/Heroic
     vmkdir usr/bin
 
-    # Copy files from the extracted work directory to the destination
+    # Copy files from the extracted work directory
     vcopy usr/share/applications/*.desktop usr/share/applications
     vcopy usr/share/icons/hicolor usr/share/icons
     vcopy opt/Heroic/* opt/Heroic
 
-    # Set up the symlink so it can be run from terminal as 'heroic'
+    # Symlink and fix permissions
     ln -sf /opt/Heroic/heroic ${DESTDIR}/usr/bin/heroic
-
-    # Fix permissions for the main binary
     chmod 755 ${DESTDIR}/opt/Heroic/heroic
+    
+    # SUID sandbox (Required for some Electron versions)
+    if [ -f ${DESTDIR}/opt/Heroic/chrome-sandbox ]; then
+        chmod 4755 ${DESTDIR}/opt/Heroic/chrome-sandbox
+    fi
 }
