@@ -1,37 +1,46 @@
+# Template file for 'HeroicGamesLauncher'
 pkgname=HeroicGamesLauncher
 version=2.18.1
 revision=1
 archs="x86_64"
-distfiles="https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v${version}/Heroic-${version}-linux-x64.tar.xz"
-checksum=1518a6e11bce31e3003a1ceafd01c12814585e4122db7bf9d8e60c39db42e38a
 short_desc="Open source launcher for GOG, Epic, and Amazon Games"
 maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="GPL-3.0-or-later"
 homepage="https://heroicgameslauncher.com"
+distfiles="https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v${version}/Heroic-${version}-linux-amd64.deb"
+checksum=471b058c659751999201502476b77241280f97223e7506927976e73792019777
+
+hostmakedepends="binutils tar xz"
 depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
 
-nopie_files="/opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/gogdl
- /opt/heroic/resources/app.asar.unpacked/build/bin/x64/linux/legendary"
-
+# Safety: Ignore PIE for bundled binaries inside the deb
+nopie_files="/opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux/gogdl
+ /opt/Heroic/resources/app.asar.unpacked/build/bin/x64/linux/legendary"
 nostrip_files="${nopie_files}"
 
-do_install() {
-    # 1. Prepare system directories
-    vmkdir opt/heroic
-    vmkdir usr/bin
-    vmkdir usr/share/applications
-    vmkdir usr/share/icons/hicolor/512x512/apps
-    vcopy "*" opt/heroic
-    ln -sf /opt/heroic/heroic "${DESTDIR}/usr/bin/heroic"
-    if [ -f "${FILESDIR}/HeroicGamesLauncher.desktop" ]; then
-        vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
-    fi
+do_extract() {
+    # Extract the .deb archive
+    ar x ${XBPS_SRCDISTDIR}/${pkgname}-${version}/Heroic-${version}-linux-amd64.deb
+    mkdir -p ${wrksrc}
+    # Unpack the data payload into the work directory
+    tar xf data.tar.xz -C ${wrksrc}
+}
 
-    if [ -f "${DESTDIR}/opt/heroic/resources/app.asar.unpacked/public/icon.png" ]; then
-        cp "${DESTDIR}/opt/heroic/resources/app.asar.unpacked/public/icon.png" "${DESTDIR}/usr/share/icons/hicolor/512x512/apps/heroic.png"
-    else
-        # Fallback for other potential locations in the tarball
-        vcopy "resources/app/public/icon.png" usr/share/icons/hicolor/512x512/apps/heroic.png || \
-        vcopy "icon.png" usr/share/icons/hicolor/512x512/apps/heroic.png
-    fi
+do_install() {
+    # Create the necessary system directories
+    vmkdir usr/share/applications
+    vmkdir usr/share/icons
+    vmkdir opt/Heroic
+    vmkdir usr/bin
+
+    # Copy files from the extracted work directory to the destination
+    vcopy usr/share/applications/*.desktop usr/share/applications
+    vcopy usr/share/icons/hicolor usr/share/icons
+    vcopy opt/Heroic/* opt/Heroic
+
+    # Set up the symlink so it can be run from terminal as 'heroic'
+    ln -sf /opt/Heroic/heroic ${DESTDIR}/usr/bin/heroic
+
+    # Fix permissions for the main binary
+    chmod 755 ${DESTDIR}/opt/Heroic/heroic
 }
