@@ -1,0 +1,26 @@
+pkgname=HeroicGamesLauncher
+version=2.18.1
+revision=1
+archs="x86_64"
+distfiles="https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v${version}/Heroic-${version}-linux-x64.tar.xz"
+checksum=1518a6e11bce31e3003a1ceafd01c12814585e4122db7bf9d8e60c39db42e38a
+short_desc="Open source launcher for GOG, Epic, and Amazon Games"
+maintainer="Ackerman <https://github.com/Ackerman-00>"
+license="GPL-3.0-or-later"
+homepage="https://heroicgameslauncher.com"
+
+depends="libnss libatk libasound libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
+
+do_install() {
+    vmkdir opt/heroic
+    # Copy everything from the extracted tarball to /opt/heroic
+    vcopy "*" opt/heroic
+    
+    # Create the symlink so 'heroic' works in terminal
+    vmkdir usr/bin
+    ln -sf /opt/heroic/heroic "${DESTDIR}/usr/bin/heroic"
+
+    # Install Desktop entry and Icon
+    vinstall "${FILESDIR}/HeroicGamesLauncher.desktop" 644 usr/share/applications
+    vinstall resources/app/public/icon.png 644 usr/share/pixmaps/heroic.png
+}
