@@ -1,5 +1,5 @@
 pkgname=mangowc
-version=0.10.9
+version=0.10.10
 revision=1
 conf_files="/etc/mango/config.conf"
 build_style=meson
@@ -12,7 +12,7 @@ license="GPL-3.0-or-later AND CC0-1.0 AND MIT"
 homepage="https://github.com/DreamMaoMao/mangowc"
 changelog="https://github.com/DreamMaoMao/mangowc/releases"
 distfiles="https://github.com/DreamMaoMao/mangowc/archive/refs/tags/${version}.tar.gz"
-checksum=65b4c4f792f54c49e08f11884cac181bbfa8c90cac5a9a834400f4079a8edd74
+checksum=34c63ee8d7b6fa7404f21cbfcfd10141821aab216d3217a6de5eeac8f5a537c0
 
 build_options="xwayland"
 desc_option_xwayland="Enable Xwayland support"
