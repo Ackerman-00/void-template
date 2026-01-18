@@ -1,5 +1,5 @@
 pkgname=noctalia-shell
-version=3.8.2
+version=4.1.1
 revision=1
 hostmakedepends=""
 maintainer="Ackerman <https://github.com/Ackerman-00>"
@@ -9,7 +9,7 @@ homepage="https://github.com/noctalia-dev/noctalia-shell"
 license="MIT"
 
 distfiles="https://github.com/noctalia-dev/noctalia-shell/archive/refs/tags/v${version}.tar.gz"
-checksum=2f586b9f5ade4eb36c12419e1a1a6dcc7a1d38f36550d8dcfd528bf1ab5795ef
+checksum=ab9491e6f91c28e79595b87176c12f164d3e2f5138ade801adc4417261482669
 
 build() {
     return 0
