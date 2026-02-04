@@ -1,6 +1,6 @@
 # Template file for 'HeroicGamesLauncher'
 pkgname=HeroicGamesLauncher
-version=2.18.1
+version=2.19.1
 revision=1
 archs="x86_64"
 short_desc="Open source launcher for GOG, Epic, and Amazon Games"
@@ -8,7 +8,7 @@ maintainer="Ackerman <https://github.com/Ackerman-00>"
 license="GPL-3.0-or-later"
 homepage="https://heroicgameslauncher.com"
 distfiles="https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/v${version}/Heroic-${version}-linux-amd64.deb"
-checksum=4f696b7593107a90ed3ff947a4b1e0dbf1734ba41cbcb8f366559fe963c43fad
+checksum=1b24ed61546ff6dc386a01091599c9543e7d10cb082ce5a2db5eb12c1d49221c
 
 hostmakedepends="binutils tar xz"
 depends="nss atk alsa-lib libcups libdrm libgbm libXcomposite libXdamage libXrandr libXScrnSaver"
