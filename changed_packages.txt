@@ -1,2 +1,2 @@
+quickshell-git
 noctalia-v5
-zed
