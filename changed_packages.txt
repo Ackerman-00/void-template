@@ -1,2 +1,2 @@
-quickshell-git
+zen-browser
 noctalia-v5

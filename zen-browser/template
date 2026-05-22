@@ -1,6 +1,6 @@
 # Template file for 'zen-browser'
 pkgname=zen-browser
-version=1.19.13b
+version=1.20b
 revision=1
 archs="x86_64 aarch64"
 build_style=fetch
@@ -26,7 +26,7 @@ esac
 distfiles="https://github.com/zen-browser/desktop/releases/download/${version}/zen.linux-${_upstream_arch}.tar.xz
  https://raw.githubusercontent.com/zen-browser/desktop/refs/heads/dev/LICENSE>LICENSE"
 checksum="
- dfc79ffb444c6dbf935a60f6ff4c5cb190567baa26f83c8e9cf8457571e1d900
+ d78983d092cfa2648cf58eff206b4701863521297ccb84a81a36e8c659f0367d
  c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30"
 
 do_install() {
