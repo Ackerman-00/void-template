@@ -1,1 +1,2 @@
+xwayland-satellite-git
 noctalia-v5
