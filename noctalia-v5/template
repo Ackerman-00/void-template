@@ -47,6 +47,8 @@ makedepends="
  librsvg-devel
  jemalloc-devel
  glib-devel
+ libqalculate-devel
+ libxml2-devel
 "
 
 post_install() {
